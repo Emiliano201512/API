@@ -1,0 +1,58 @@
+pipeline {
+    agent {
+        docker {
+            image 'rust:latest' // Utiliza la imagen oficial de Rust como base
+            args '-v $HOME/.cargo:/root/.cargo' // Mapea el directorio .cargo para caché de dependencias
+        }
+    }
+    
+    environment {
+        DOCKER_IMAGE = 'fabiandiaz1512/mi_aplicacion' // Nombre de la imagen Docker
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'cargo build --release' // Compila la aplicación en modo release
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'cargo test' // Ejecuta las pruebas unitarias
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t $DOCKER_IMAGE .' // Construye la imagen Docker
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD' // Inicia sesión en Docker Hub
+                    sh 'docker push $DOCKER_IMAGE' // Empuja la imagen Docker a Docker Hub
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                // Aquí puedes agregar los comandos necesarios para desplegar tu API
+                // Por ejemplo, ejecutar el contenedor Docker con la imagen construida
+                sh "docker run -d -p 8080:8080 $DOCKER_IMAGE"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline finalizado exitosamente'
+        }
+        failure {
+            echo 'El pipeline ha fallado'
+        }
+    }
+}
