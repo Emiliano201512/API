@@ -4,7 +4,7 @@ metadata:
   name: api-ingress
 spec:
   rules:
-  - host: api.DIAZ.com # Reemplaza "xapellido" con tu apellido
+  - host: api.diaz.com # Reemplaza "xapellido" con tu apellido
     http:
       paths:
       - path: /
